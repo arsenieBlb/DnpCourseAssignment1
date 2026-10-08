@@ -1,0 +1,5 @@
+[
+  { "Id": 1, "Body": "post1", "UserId": 2, "PostId": 1 },
+  { "Id": 2, "Body": "pos2", "UserId": 1, "PostId": 2 },
+  { "Id": 3, "Body": "temp", "UserId": 3, "PostId": 3 }
+]

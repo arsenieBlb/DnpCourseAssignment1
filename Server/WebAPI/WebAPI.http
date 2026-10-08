@@ -1,0 +1,16 @@
+@WebAPI_HostAddress = http://localhost:5208
+
+GET {{WebAPI_HostAddress}}/Users
+Accept: application/json
+
+###
+
+GET {{WebAPI_HostAddress}}/Posts
+Accept: application/json
+
+###
+
+GET {{WebAPI_HostAddress}}/Comments
+Accept: application/json
+
+###
