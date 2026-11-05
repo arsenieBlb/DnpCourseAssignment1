@@ -1,0 +1,107 @@
+@page "/ViewPost/{Id:int}"
+@using System.Security.Claims
+@using ApiContracts
+@using BlazorApp.Services
+@inject IPostService PostService
+@inject IUserService UserService
+@inject ICommentService CommentService
+
+<PageTitle>View Post</PageTitle>
+
+@if (!string.IsNullOrEmpty(errorLabel))
+{
+    <label style="color: red">@errorLabel</label>
+}
+@if (postDto is null)
+{
+    <h3>View Post</h3>
+    @if (string.IsNullOrEmpty(errorLabel))
+    {
+        <p>Loading...</p>
+    }
+}
+else
+{
+    <h3>@postDto.Title</h3>
+    <p>Author: @author?.UserName</p>
+    <p>@postDto.Body</p>
+
+    <h4>Comments</h4>
+    @foreach (CommentDto comment in comments)
+    {
+        <p>@comment.Body</p>
+    }
+
+    <AuthorizeView>
+        <Authorized>
+            <label>Comment:</label>
+            <textarea @bind="commentBody"></textarea>
+            <button @onclick="AddCommentAsync">Add Comment</button>
+        </Authorized>
+        <NotAuthorized>
+            <p><NavLink href="login">Log in</NavLink> to add a comment.</p>
+        </NotAuthorized>
+    </AuthorizeView>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [CascadingParameter] public Task<AuthenticationState> State { get; set; } = null!;
+
+    private PostDto? postDto;
+    private UserDto? author;
+    private IEnumerable<CommentDto> comments = [];
+    private string commentBody = "";
+    private string errorLabel = "";
+    private int userId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorLabel = "";
+        postDto = null;
+        author = null;
+        comments = [];
+        try
+        {
+            postDto = await PostService.GetPostAsync(Id);
+            author = await UserService.GetUserAsync(postDto.UserId);
+            comments = await CommentService.GetCommentsAsync(Id);
+
+            AuthenticationState authenticationState = await State;
+            ClaimsPrincipal claimsPrincipal = authenticationState.User;
+            if (claimsPrincipal.Identity is null || !claimsPrincipal.Identity.IsAuthenticated)
+            {
+                return;
+            }
+            IEnumerable<Claim> claims = claimsPrincipal.Claims;
+            string userIdAsString = claims.Single(c => c.Type == "Id").Value;
+            userId = int.Parse(userIdAsString);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            errorLabel = $"Error: {e.Message}";
+        }
+    }
+
+    private async Task AddCommentAsync()
+    {
+        errorLabel = "";
+        try
+        {
+            CommentDto comment = await CommentService.AddCommentAsync(new CreateCommentDto
+            {
+                Body = commentBody,
+                UserId = userId,
+                PostId = Id
+            });
+            comments = comments.Append(comment).ToList();
+            commentBody = "";
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            errorLabel = $"Error: {e.Message}";
+        }
+    }
+}

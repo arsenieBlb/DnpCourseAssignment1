@@ -1,0 +1,43 @@
+@page "/ViewPosts"
+@using ApiContracts
+@using BlazorApp.Services
+@inject IPostService PostService
+
+<PageTitle>View Posts</PageTitle>
+
+<h3>View Posts</h3>
+@if (!string.IsNullOrEmpty(errorLabel))
+{
+    <label style="color: red">@errorLabel</label>
+}
+else if (posts is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <ul>
+        @foreach (PostDto post in posts)
+        {
+            <li><NavLink href="@($"/ViewPost/{post.Id}")">@post.Title</NavLink></li>
+        }
+    </ul>
+}
+
+@code {
+    private IEnumerable<PostDto>? posts;
+    private string errorLabel = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            posts = await PostService.GetPostsAsync();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            errorLabel = $"Error: {e.Message}";
+        }
+    }
+}
